@@ -1,34 +1,76 @@
 package main
 
 import (
-	"context"
 	"fmt"
-	"github.com/redis/go-redis/v9"
+	"net"
+	"bufio"
+	"strings"	
+	"log"
 )
 
-func main() {    
-    listener, err := net.Listen("tcp", ":6379")
-	if err != nil {
-		fmt.Printlnt("Error starting the server:", err)
+const (
+	port = ":6379"
+)
 
-	}
-
-	conn, err := listener.Accept()
+func main() {
+	fmt.Println("My redis server is starting on port: %s", port)
+	listener, err := net.Listen("tcp", port)
 	if err != nil {
-		fmt.Printl("Error Accepting connection:", err)
+		fmt.Println(err)
+		return
 	}
+	defer listener.Close()
+
+	fmt.Println("Listening for connections")
 
 	for {
-		buf := make([]byte, 1024)
-
-
-		_, err := conn.Read(buf)
+		conn, err := listener.Accept()
 		if err != nil {
-			if err == io.EOF {
-				fmt.Println("error reading from connection:", err)
-			}
+			log.Println("Error accepting connection: %s", err)
+			continue
 		}
 
-		conn.Write([]byte("+OK"))
+		fmt.Println("New Client is connected: %s", conn.RemoteAddr())
+
+		go handleclient(conn)
+	}
+
+
+}
+
+func handleclient(conn net.Conn) {
+	defer func(){
+		fmt.Println("Client disconnected: %s", conn.RemoteAddr())
+		conn.Close()
+	}()
+
+	reader := bufio.NewReader(conn)
+	writer := bufio.NewWriter(conn)
+
+	for {
+		message, err := reader.ReadString('\n')
+		if err != nil {
+			if err.Error() == "EOF" {
+				return
+			}
+			log.Println("Error reading the message: %s", err)
+			return
+		}
+
+		message = strings.TrimSpace((message))
+
+		if message == "" {
+			continue
+		}
+
+		fmt.Printf("Received from %s: %s\n", conn.RemoteAddr(), message)
+
+		response := fmt.Sprintf("ECHO: %s", message)
+		_, err = writer.WriteString(response)
+		if err != nil {
+			log.Println("Failed to tell the response")
+		}
+
+		writer.Flush()
 	}
 }
