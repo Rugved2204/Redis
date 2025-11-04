@@ -13,7 +13,7 @@ const (
 )
 
 func main() {
-	fmt.Println("My redis server is starting on port: %s", port)
+	fmt.Printf("My redis server is starting on port: %s\n", port)
 	listener, err := net.Listen("tcp", port)
 	if err != nil {
 		fmt.Println(err)
@@ -26,11 +26,11 @@ func main() {
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
-			log.Println("Error accepting connection: %s", err)
+			log.Printf("Error accepting connection: %s", err)
 			continue
 		}
 
-		fmt.Println("New Client is connected: %s", conn.RemoteAddr())
+		fmt.Printf("New Client is connected: %s\n", conn.RemoteAddr())
 
 		go handleclient(conn)
 	}
@@ -40,7 +40,7 @@ func main() {
 
 func handleclient(conn net.Conn) {
 	defer func(){
-		fmt.Println("Client disconnected: %s", conn.RemoteAddr())
+		fmt.Printf("Client disconnected: %s\n", conn.RemoteAddr())
 		conn.Close()
 	}()
 
@@ -53,7 +53,7 @@ func handleclient(conn net.Conn) {
 			if err.Error() == "EOF" {
 				return
 			}
-			log.Println("Error reading the message: %s", err)
+			log.Printf("Error reading the message: %s", err)
 			return
 		}
 
